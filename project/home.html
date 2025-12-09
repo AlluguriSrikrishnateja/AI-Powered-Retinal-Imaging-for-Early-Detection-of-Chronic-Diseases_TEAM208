@@ -474,7 +474,17 @@
                 originalImg.onload = () => {
                     document.getElementById('analysis').scrollIntoView({ behavior: 'smooth' });
 
-                    const ai_results = mockAIAnalysis();
+                    const ai_results =fetch("http://127.0.0.1:5000/analyze", {
+    method: "POST",
+    body: new FormData(document.getElementById("patient-form"))
+})
+.then(res => res.json())
+.then(ai_results => {
+    displayAIResults(ai_results);
+    drawAnnotations(placeholderImg, ai_results.annotations);
+    generateOfficialReport(ai_results, imageDataURL);
+})
+.catch(err => alert("Backend error: " + err));
                     displayAIResults(ai_results);
                     drawAnnotations(placeholderImg, ai_results.annotations);
                     generateOfficialReport(ai_results, imageDataURL);
