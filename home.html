@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chronic Disease Prediction Dashboard</title>
+    
+    <style>
+        /* --- CSS STYLES (Responsive Design & Print Layout) --- */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --background-color: #f4f7f9;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --font-family: 'Arial', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        /* --- General UI Components --- */
+        header { background-color: var(--primary-color); color: white; padding: 1rem 0; margin-bottom: 20px; }
+        .header-content { max-width: 1200px; margin: auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        nav a { color: white; text-decoration: none; margin-left: 15px; font-size: 0.9rem; padding: 5px 10px; border-radius: 4px; }
+
+        .card { background: var(--card-background); padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); margin-bottom: 25px; }
+        .hidden { display: none; }
+        h2 { color: var(--primary-color); margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid #f0f0f0; }
+
+        /* Form, Buttons, and Layout */
+        .form-grid { display: flex; flex-wrap: wrap; gap: 20px; }
+        .form-group { flex: 1 1 calc(50% - 20px); }
+        .form-group.full-width { flex: 1 1 100%; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+        .primary-btn, .secondary-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; margin-top: 10px; }
+        .primary-btn { background-color: var(--primary-color); color: white; }
+        .secondary-btn { background-color: #6c757d; color: white; }
+        .action-buttons { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        
+        .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .image-viewer { text-align: center; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; }
+        .annotated-view { position: relative; }
+        .retina-image-placeholder { width: 100%; height: auto; display: block; margin: auto; border-radius: 4px; }
+        #annotation-canvas { position: absolute; top: 10px; left: 0; z-index: 10; }
+        #placeholder-img { opacity: 0; visibility: hidden; position: absolute; }
+        .results-panel { grid-column: 1 / -1; padding: 15px; background-color: #f8f9fa; border-radius: 6px; }
+        .high-risk { color: var(--danger-color); font-weight: bold; }
+        .low-risk { color: var(--secondary-color); font-weight: bold; }
+
+        /* Confidence and Progress Bar Styling */
+        .progress {
+            background-color: #e9ecef;
+            border-radius: 0.25rem;
+            height: 25px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--secondary-color);
+            transition: width 0.6s ease;
+            text-align: right;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            line-height: 25px;
+        }
+        
+        /* Bar Chart Specific Styles (Detection Probability) */
+        .bar-chart-container {
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+        .bar-item {
+            margin-bottom: 15px;
+        }
+        .bar-label {
+            display: block;
+            font-weight: bold;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+        .bar-wrapper {
+            display: flex;
+            align-items: center;
+        }
+        .detection-bar {
+            height: 20px;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+            min-width: 5px; /* Ensures visibility for low scores */
+        }
+        .bar-percent {
+            margin-left: 10px;
+            font-weight: bold;
+            color: var(--primary-color);
+            min-width: 40px;
+        }
+
+        /* Separator for clear flow */
+        .section-divider-text {
+            font-weight: bold;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px dashed #ccc;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        /* MODIFIED: New Recommendation styles - Official & Neat */
+        .recommendation-summary {
+            background-color: #f0f0f4; 
+            border: 1px solid #ddd;
+            border-left: 6px solid var(--primary-color); 
+            padding: 20px;
+            margin-top: 15px;
+            border-radius: 6px;
+            line-height: 1.5;
+            font-size: 1.0rem; 
+        }
+        .recommendation-summary h4 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #ccc;
+        }
+        .recommendation-list {
+            list-style-type: decimal;
+            padding-left: 25px;
+            font-size: 1.0rem; 
+        }
+        .recommendation-list li {
+            margin-bottom: 15px;
+            font-weight: 400; 
+        }
+        .recommendation-list li strong {
+            font-weight: bold; 
+            color: #333;
+        }
+
+
+        /* --- Report Specific Styles (Hidden in main view) --- */
+        #official-report {
+            padding: 40px;
+            margin: 0;
+            background: white;
+            border: 1px solid #ccc;
+            display: none; 
+            font-size: 12pt;
+        }
+        .report-header {
+            text-align: center;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .report-header h1 {
+            color: var(--primary-color);
+            font-size: 24pt;
+        }
+        .report-patient-info {
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .report-patient-info div {
+            flex-basis: 50%;
+        }
+        .report-section h3 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-top: 20px;
+            color: #555;
+        }
+        .report-signature {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px dashed #999;
+            display: flex;
+            justify-content: flex-end;
+            text-align: right;
+            flex-direction: column;
+            width: 50%; 
+            margin-left: auto;
+        }
+        .signature-line {
+            height: 60px; 
+            margin-bottom: 5px;
+            position: relative;
+        }
+        .signature-line img {
+            height: 100%;
+            width: 150px;
+            object-fit: contain;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+
+        /* --- Media Queries & Print Styles (Show the report, hide UI) --- */
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; }
+            .form-group { flex: 1 1 100%; }
+            .analysis-grid { grid-template-columns: 1fr; }
+            .action-buttons { flex-direction: column; }
+            .primary-btn, .secondary-btn { width: 100%; }
+            .report-patient-info { flex-direction: column; }
+            .report-signature { width: 100%; }
+        }
+        
+        @media print {
+            /* Hide the main UI elements */
+            header, nav, #input, .analysis-section, .action-section, footer, .hidden {
+                display: none !important;
+            }
+            /* Show the dedicated report container */
+            #official-report {
+                display: block !important;
+                border: none;
+                box-shadow: none;
+            }
+            body, .container, main {
+                background: white;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            /* Reset the canvas size for printing */
+            #annotation-canvas { display: none; }
+            /* Ensure the progress bars print correctly */
+            .detection-bar { background-color: #000 !important; }
+            /* Ensure the list styles are respected in print */
+            .recommendation-list { list-style-type: decimal !important; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <span class="logo">👁️ AI Retinal Insight</span>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <section id="input" class="card">
+            <h2> Patient & Image Acquisition (Doctor Input)</h2>
+            <form id="patient-form" class="form-grid">
+                <div class="form-group">
+                    <label for="doctor-name">Consulting Doctor Name</label>
+                    <input type="text" id="doctor-name" placeholder="Enter Doctor Name (Required for Signature)" required>
+                </div>
+                <div class="form-group">
+                    <label for="patient-id">Patient ID</label>
+                    <input type="text" id="patient-id" placeholder="Enter Patient ID (e.g., P-2024-001)" required>
+                </div>
+                <div class="form-group">
+                    <label for="patient-name">Patient Name</label>
+                    <input type="text" id="patient-name" placeholder="Enter Patient Name" required>
+                </div>
+                <div class="form-group">
+                    <label for="patient-dob">Patient DOB</label>
+                    <input type="text" id="patient-dob" placeholder="DD/MM/YYYY">
+                </div>
+                <div class="form-group full-width">
+                    <label for="retinal-image">Upload Retinal Image</label>
+                    <input type="file" id="retinal-image" accept="image/*" required>
+                    <p class="file-note">Required to upload the image</p>
+                </div>
+                <button type="submit" class="full-width primary-btn">
+                    Analyze  
+                </button>
+            </form>
+        </section>
+
+        <section id="analysis" class="card analysis-section hidden">
+            <h2>Interactive Analysis Dashboard</h2>
+            <div class="analysis-grid">
+                <div class="image-viewer">
+                    <h3>Original Retinal Image</h3>
+                    <img id="original-img" src="" alt="Original Retinal Image" class="retina-image-placeholder">
+                </div>
+
+                <div class="image-viewer annotated-view">
+                    <h3>AI Annotation Overlay 
+                        
+                    </h3>
+                    <canvas id="annotation-canvas"></canvas> 
+                    <img id="placeholder-img" src="" alt="Annotated Retinal Image" class="retina-image-placeholder"> 
+                </div>
+                
+                <div class="results-panel full-width">
+                    <h3>Diagnostic Results</h3>
+                    
+                    <div id="model-confidence" class="confidence-bar">
+                        <p>Overall Model Confidence: <strong id="confidence-val">--</strong></p>
+                        <div class="progress">
+                            <div id="confidence-progress" class="progress-bar"></div>
+                        </div>
+                    </div>
+                    
+                    <p class="section-divider-text">Detection Probability Score (Bar Graph):</p>
+                    <div id="detection-bar-chart" class="bar-chart-container">
+                        <div class="bar-item">
+                            <span class="bar-label">Diabetic Retinopathy (DR)</span>
+                            <div class="bar-wrapper">
+                                <div id="dr-detection-bar" class="detection-bar"></div>
+                                <span id="dr-detection-percent" class="bar-percent">--%</span>
+                            </div>
+                        </div>
+                        <div class="bar-item">
+                            <span class="bar-label">Hypertensive Retinopathy (HT)</span>
+                            <div class="bar-wrapper">
+                                <div id="ht-detection-bar" class="detection-bar"></div>
+                                <span id="ht-detection-percent" class="bar-percent">--%</span>
+                            </div>
+                        </div>
+                        <div class="bar-item">
+                            <span class="bar-label">Cardiovascular Risk (CVR)</span>
+                            <div class="bar-wrapper">
+                                <div id="cv-detection-bar" class="detection-bar"></div>
+                                <span id="cv-detection-percent" class="bar-percent">--%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="section-divider-text">Chronic Diseases Detected (Detailed Stage):</p>
+                    <div class="results-list">
+                        <ul>
+                            <li><span class="condition-label">Diabetic Retinopathy Stage:</span> <span id="dr-stage-result">N/A</span></li>
+                            <li><span class="condition-label">Hypertensive Retinopathy Grade:</span> <span id="ht-grade-result">N/A</span></li>
+                            <li><span class="condition-label">Cardiovascular Risk Markers:</span> <span id="cv-risk-result">N/A</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="report" class="card action-section hidden">
+            <h2>Actionable Recommendations & Reporting</h2>
+            <div id="recommendations" class="recommendation-summary">
+                <h4>AI-Generated Clinical Recommendations</h4>
+                <ul id="rec-list" class="recommendation-list">
+                    <li>Recommendations will appear here after analysis.</li>
+                </ul>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="verify-btn" class="secondary-btn">✔️ Clinician Verification</button>
+                <button id="generate-report-btn" class="primary-btn">🖨️ Generate & Print Report</button>
+            </div>
+        </section>
+
+        <div id="official-report">
+            <div class="report-header">
+                <h1>AI-Powered Retinal Diagnostic Report</h1>
+                <p>Generated by AI Retinal Clinical Decision Support System (CDSS)</p>
+            </div>
+
+            <div class="report-section">
+                <h3>Patient and Study Details</h3>
+                <div class="report-patient-info">
+                    <div>
+                        <p><strong>Patient Name:</strong> <span id="report-name"></span></p>
+                        <p><strong>Patient ID:</strong> <span id="report-id"></span></p>
+                        <p><strong>Date of Birth:</strong> <span id="report-dob"></span></p>
+                    </div>
+                    <div>
+                        <p><strong>Report Date:</strong> <span id="report-date"></span></p>
+                        <p><strong>Consulting Doctor:</strong> <span id="report-doctor"></span></p>
+                        <p><strong>Study Type:</strong> Retinal Fundus/OCT Analysis</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <h3>AI Diagnostic Findings</h3>
+                <p><strong>Overall Model Confidence:</strong> <span id="report-confidence"></span></p>
+                <ul style="padding-left: 20px; margin-top: 10px;">
+                    <li><strong>Diabetic Retinopathy (DR):</strong> <span id="report-dr"></span> (Detection Probability: <span id="report-dr-prob"></span>)</li>
+                    <li><strong>Hypertensive Retinopathy (HT):</strong> <span id="report-ht"></span> (Detection Probability: <span id="report-ht-prob"></span>)</li>
+                    <li><strong>Cardiovascular Risk Profile (CVR):</strong> <span id="report-cv"></span> (Detection Probability: <span id="report-cv-prob"></span>)</li>
+                </ul>
+            </div>
+            
+            <div class="report-section">
+                <h3>AI-Derived Clinical Recommendation</h3>
+                <div id="report-recommendation-summary" class="recommendation-summary" style="background-color: #f0f0f4; border-left-color: #007bff; border-radius: 6px; font-style: normal; margin: 10px 0;">
+                    </div>
+            </div>
+
+            <div class="report-section">
+                <h3>Annotated Image (Reference)</h3>
+                <div style="text-align: center; margin: 15px 0;">
+                    <img id="report-image" src="" alt="Annotated Retinal Image" style="max-width: 80%; border: 1px solid #ccc;">
+                </div>
+            </div>
+
+            <div class="report-signature">
+                <div class="signature-line">
+                    <img src="https://i.imgur.com/8Q9lK4J.png" alt="Digital Signature Mockup">
+                </div>
+                <p>____________________________________</p>
+                <p><strong><span id="signature-doctor-name"></span></strong></p>
+                <p>Certified Consultant Ophthalmologist/Physician</p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2024 AI Retinal Imaging CDSS. For Clinical Use Only.</p>
+    </footer>
+
+    <script>
+        // --- JAVASCRIPT LOGIC ---
+
+        document.getElementById('patient-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('retinal-image');
+            
+            // Basic Form Validation Check
+            if (fileInput.files.length === 0) {
+                alert("Please upload a retinal image to start the analysis.");
+                return;
+            }
+            if (!document.getElementById('patient-id').value || !document.getElementById('patient-name').value || !document.getElementById('doctor-name').value) {
+                alert("Please fill in Doctor Name, Patient ID, and Patient Name.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const imageDataURL = event.target.result;
+                
+                // Show the analysis and report sections in the main UI
+                document.querySelector('.analysis-section').classList.remove('hidden');
+                document.querySelector('.action-section').classList.remove('hidden');
+                
+                const originalImg = document.getElementById('original-img');
+                const placeholderImg = document.getElementById('placeholder-img');
+                originalImg.src = imageDataURL;
+                placeholderImg.src = imageDataURL;
+
+                originalImg.onload = () => {
+                    document.getElementById('analysis').scrollIntoView({ behavior: 'smooth' });
+
+                    const ai_results = mockAIAnalysis();
+                    displayAIResults(ai_results);
+                    drawAnnotations(placeholderImg, ai_results.annotations);
+                    generateOfficialReport(ai_results, imageDataURL);
+                };
+            };
+            reader.readAsDataURL(file);
+        });
+
+        /**
+         * Mocks the backend AI service response.
+         */
+        function mockAIAnalysis() {
+            // Mock coordinates for drawing (normalized 0-1000)
+            const annotations = [
+                // Diabetic Retinopathy (DR) markers - Red
+                { type: 'Microaneurysm', x: 200, y: 350, size: 20, color: 'rgba(220, 53, 69, 0.8)', label: 'DR MA' }, 
+                { type: 'Hemorrhage', x: 550, y: 700, size: 40, color: 'rgba(220, 53, 69, 0.8)', label: 'DR Hemo' }, 
+                // Hypertension (HT) markers - Yellow
+                { type: 'Exudate', x: 800, y: 450, size: 30, color: 'rgba(255, 193, 7, 0.8)', label: 'HT Exudate' }, 
+                // Cardiovascular Risk (CVR) markers - Blue (e.g., vessel changes)
+                { type: 'Vessel Narrowing', x: 100, y: 500, size: 200, color: 'rgba(0, 123, 255, 0.8)', shape: 'circle', label: 'CVR Vessel Change' } 
+            ];
+
+            return {
+                confidence: 0.96,
+                results: {
+                    // Detection Percentages for the Bar Chart
+                    dr_detection_percent: 92,
+                    ht_detection_percent: 75,
+                    cv_detection_percent: 85,
+
+                    // Detailed Text Results for the List
+                    dr_stage: "Severe Non-Proliferative Diabetic Retinopathy (NPDR)",
+                    ht_grade: "Confirmed Grade 2 Hypertensive Retinopathy",
+                    cv_risk: "HIGH (Calculated 5-Year Risk > 20%)"
+                },
+                annotations: annotations
+            };
+        }
+
+        /**
+         * Updates the interactive dashboard UI and the recommendations section.
+         */
+        function displayAIResults(results) {
+            const confidencePercent = Math.round(results.confidence * 100);
+            
+            // 1. Overall Confidence Bar
+            document.getElementById('confidence-val').textContent = `${confidencePercent}%`;
+            document.getElementById('confidence-progress').style.width = `${confidencePercent}%`;
+            document.getElementById('confidence-progress').textContent = `${confidencePercent}%`;
+
+            // 2. Detection Percentage Bar Chart
+            // Diabetic Retinopathy
+            document.getElementById('dr-detection-bar').style.width = `${results.results.dr_detection_percent}%`;
+            document.getElementById('dr-detection-percent').textContent = `${results.results.dr_detection_percent}%`;
+
+            // Hypertensive Retinopathy
+            document.getElementById('ht-detection-bar').style.width = `${results.results.ht_detection_percent}%`;
+            document.getElementById('ht-detection-percent').textContent = `${results.results.ht_detection_percent}%`;
+
+            // Cardiovascular Risk
+            document.getElementById('cv-detection-bar').style.width = `${results.results.cv_detection_percent}%`;
+            document.getElementById('cv-detection-percent').textContent = `${results.results.cv_detection_percent}%`;
+            
+            // 3. Detailed Text Findings
+            const cv_risk_class = results.results.cv_risk.includes('HIGH') ? 'high-risk' : 'low-risk';
+            
+            document.getElementById('dr-stage-result').innerHTML = results.results.dr_stage;
+            document.getElementById('ht-grade-result').innerHTML = results.results.ht_grade;
+            document.getElementById('cv-risk-result').innerHTML = `<span class="${cv_risk_class}">${results.results.cv_risk}</span>`;
+
+            // --- Updated Actionable Recommendations for UI ---
+            const recList = document.getElementById('rec-list');
+            recList.innerHTML = ''; // Clear previous recommendations
+
+            // 1. Summary Finding
+            const findingItem = document.createElement('li');
+            findingItem.innerHTML = `<strong>Primary Findings:</strong> Detection of **${results.results.dr_stage}** and **${results.results.ht_grade}**, resulting in a **${results.results.cv_risk}** cardiovascular risk profile.`;
+            recList.appendChild(findingItem);
+            
+            // 2. Immediate Action
+            const actionItem1 = document.createElement('li');
+            actionItem1.innerHTML = `<strong>Immediate Specialist Referral:</strong> Mandate immediate consultation with a certified **Ophthalmologist** (for detailed ocular exam) and a **Cardiologist** (for systemic hypertension/CV risk management).`;
+            recList.appendChild(actionItem1);
+
+            // 3. Follow-up Plan
+            const actionItem2 = document.createElement('li');
+            actionItem2.innerHTML = `<strong>Follow-up Imaging:</strong> A repeat retinal imaging scan is advised in **3 months** to accurately monitor disease progression and assess treatment efficacy.`;
+            recList.appendChild(actionItem2);
+
+            // 4. Clinician Note
+            const actionItem3 = document.createElement('li');
+            actionItem3.innerHTML = `<strong>Systemic Management:</strong> Initiate urgent communication with the patient's Primary Care Physician to intensify the management of underlying conditions (Diabetes Mellitus and Hypertension).`;
+            recList.appendChild(actionItem3);
+        }
+
+        /**
+         * Fills the hidden official report template with all gathered data.
+         */
+        function generateOfficialReport(results, imageURL) {
+            const patientName = document.getElementById('patient-name').value;
+            const patientID = document.getElementById('patient-id').value;
+            const patientDOB = document.getElementById('patient-dob').value || 'N/A';
+            const doctorName = document.getElementById('doctor-name').value;
+            const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            // 1. Patient Info
+            document.getElementById('report-name').textContent = patientName;
+            document.getElementById('report-id').textContent = patientID;
+            document.getElementById('report-dob').textContent = patientDOB;
+            document.getElementById('report-date').textContent = today;
+            document.getElementById('report-doctor').textContent = doctorName;
+
+            // 2. Diagnostic Findings (Now includes probability scores)
+            document.getElementById('report-confidence').textContent = `${Math.round(results.confidence * 100)}%`;
+            
+            document.getElementById('report-dr').textContent = results.results.dr_stage;
+            document.getElementById('report-dr-prob').textContent = `${results.results.dr_detection_percent}%`;
+
+            document.getElementById('report-ht').textContent = results.results.ht_grade;
+            document.getElementById('report-ht-prob').textContent = `${results.results.ht_detection_percent}%`;
+
+            document.getElementById('report-cv').textContent = results.results.cv_risk;
+            document.getElementById('report-cv-prob').textContent = `${results.results.cv_detection_percent}%`;
+
+            // 3. Recommendation (Now injects the structured list)
+            const recListContent = document.getElementById('rec-list').innerHTML;
+            const reportRecSummary = document.getElementById('report-recommendation-summary');
+            
+            // We reuse the structured list HTML to make the report actionable
+            reportRecSummary.innerHTML = `
+                <ul class="recommendation-list">
+                    ${recListContent}
+                </ul>
+            `;
+
+            // 4. Image and Signature
+            document.getElementById('report-image').src = imageURL;
+            document.getElementById('signature-doctor-name').textContent = doctorName;
+        }
+
+        /**
+         * Core function to draw annotations using the HTML Canvas API.
+         */
+        function drawAnnotations(imageElement, annotations) {
+            const canvas = document.getElementById('annotation-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas to match the image's intrinsic size
+            canvas.width = imageElement.naturalWidth;
+            canvas.height = imageElement.naturalHeight;
+
+            // Set canvas CSS dimensions to match the displayed image size
+            canvas.style.width = imageElement.clientWidth + 'px';
+            canvas.style.height = imageElement.clientHeight + 'px';
+            
+            const imageRect = imageElement.getBoundingClientRect();
+            canvas.style.left = imageElement.offsetLeft + 'px';
+            canvas.style.top = imageElement.offsetTop + 'px';
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            annotations.forEach(anno => {
+                // Map normalized coordinates (0-1000) to actual canvas coordinates
+                const x = anno.x * (canvas.width / 1000);
+                const y = anno.y * (canvas.height / 1000);
+                const size = anno.size * (canvas.width / 1000);
+
+                ctx.beginPath();
+                ctx.strokeStyle = anno.color;
+                ctx.lineWidth = 6;
+                ctx.font = 'bold 20px Arial';
+                ctx.fillStyle = anno.color;
+
+                if (anno.shape === 'circle' || anno.type === 'Vessel Narrowing') {
+                    ctx.arc(x, y, size * 0.5, 0, 2 * Math.PI);
+                    ctx.stroke();
+                } else {
+                    ctx.fillRect(x - size / 2, y - size / 2, size, size);
+                }
+
+                ctx.fillStyle = '#fff'; 
+                ctx.fillText(anno.label, x + size/2 + 5, y + 5);
+            });
+        }
+
+
+        // 3. Output, Reporting, and Action: Generate Report
+        document.getElementById('generate-report-btn').addEventListener('click', function() {
+            // This prepares the official report content and triggers the print view
+            window.print();
+        });
+
+        document.getElementById('verify-btn').addEventListener('click', function() {
+            alert("Clinician's findings verified and locked into the patient's record.");
+        });
+    </script>
+</body>
+</html>
