@@ -5,6 +5,7 @@ import cv2
 import os
 from werkzeug.utils import secure_filename
 
+
 app = Flask(__name__)
 
 # Load the trained model
