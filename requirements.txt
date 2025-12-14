@@ -1,0 +1,6 @@
+Flask
+tensorflow
+numpy
+opencv-python
+werkzeug
+flask-cors
