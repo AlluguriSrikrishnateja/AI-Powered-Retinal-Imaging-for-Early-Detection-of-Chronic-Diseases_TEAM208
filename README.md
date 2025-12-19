@@ -257,7 +257,7 @@ Recall: 92%
 This accuracy reflects the model’s overall correctness in detecting and classifying chronic disease indicators (such as diabetic retinopathy, hypertension, and cardiovascular risk) from retinal images, as reported in your project results. 
 
 
-📊 Results
+## 📊 Results
 
 The AI model successfully analyzed retinal images and detected chronic disease indicators such as diabetic retinopathy, hypertension, and cardiovascular risk.
 
@@ -278,7 +278,7 @@ Delivered fast and reliable predictions, enabling near real-time diagnosis.
 The web-based application allowed easy image upload, analysis, and report generation for clinicians.
 
 
-🌍 Impact
+## 🌍 Impact
 
 Early Disease Detection: Enables identification of chronic diseases at an early stage, reducing complications.
 
