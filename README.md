@@ -148,7 +148,7 @@ This project aims to build a portal to predict pneumonia efficiently and accurat
 
 
 ## Requirements 
-Here is a **SHORT, COMPACT, ALL-IN-ONE REQUIREMENTS LIST** that **covers every point** and is **perfect for PPT, exam answers, and review panels**:
+
 
 ---
 
